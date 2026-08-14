@@ -1,0 +1,16 @@
+# Standalone-install layer for the appearance settings section.
+#
+# This package is a `dsh.client` browser plugin: by itself, `dsh plugin add`
+# would install it as a plain dependency and activate nothing. Declaring this
+# patch (via `dsh.bundle.patch` in package.json) makes the package a bundle, so
+# `dsh plugin` appends it to the profile's layer stack and this insert lands in
+# the composed configuration. The row names the package itself, so the Loader
+# resolves it from the profile's own node_modules.
+#
+# The row id is deliberately NOT `ui-skin` or `skin`: the official web-app
+# bundle owns the settings surface namespace, and a duplicate loader entry id
+# fails the boot. This package's own id keeps it installable alongside the
+# official rows on any deployment.
+- insert:
+    - id: dsh-skin-appearance
+      name: dsh-skin-appearance
