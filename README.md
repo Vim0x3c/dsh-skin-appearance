@@ -1,5 +1,7 @@
 # dsh-skin-appearance
 
+[English](README.en.md) | 中文
+
 这是一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的外观插件。
 它保留 Harness 原生控件，只在设置中增加「外观定制」页面，提供：
 
