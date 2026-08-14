@@ -1,5 +1,7 @@
 # dsh-skin-appearance
 
+[中文](README.md) | English
+
 An appearance plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
 
 It keeps the Harness UI native and adds an Appearance settings page with:
