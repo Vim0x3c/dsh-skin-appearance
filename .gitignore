@@ -7,6 +7,11 @@ lib/
 dist/
 *.tsbuildinfo
 
+# Packed tarballs and local backups
+*.tgz
+*.bak-*
+pnpm-workspace.yaml
+
 # Test / coverage
 coverage/
 .vitest/

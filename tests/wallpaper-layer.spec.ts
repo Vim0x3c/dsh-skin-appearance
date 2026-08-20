@@ -8,6 +8,20 @@ afterEach(() => {
 })
 
 describe('WallpaperApplier', () => {
+  it('stays unmounted until a non-empty wallpaper is explicitly applied', () => {
+    const root = document.createElement('div')
+    root.id = 'root'
+    document.body.append(root)
+
+    const applier = new WallpaperApplier()
+    applier.setOpacity(0.7)
+    applier.setBlur(12)
+
+    expect(root.querySelector('[data-dsh-skin-wallpaper]')).toBeNull()
+    expect(root.style.position).toBe('')
+    expect(root.style.isolation).toBe('')
+  })
+
   it('mounts below app content and restores host styles on disposal', () => {
     const root = document.createElement('div')
     root.id = 'root'

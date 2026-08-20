@@ -25,7 +25,7 @@ export type SkinPresetVariant = 'qq2008'
 
 /** One plugin-owned image theme plus its settings-card metadata. */
 export interface SkinPreset {
-  /** Namespaced ThemeRuntime id persisted in the appearance section. */
+  /** Namespaced skin id persisted in the appearance section. */
   id: string
   /** Locale suffix used by `skin.<key>`. */
   key: SkinPresetKey
@@ -39,8 +39,8 @@ export interface SkinPreset {
   variant?: SkinPresetVariant
   /** Sidebar and composer recipe paired with this wallpaper. */
   surface: PresetSurfaceStyleMode
-  /** Alias-token overrides for the preset. */
-  tokens: Record<string, string>
+  /** Alias-token overrides for both palette modes. */
+  tokens: Record<'light' | 'dark', Record<string, string>>
 }
 
 /** Theme ids are namespaced because ThemeRuntime has one global id registry. */
@@ -55,7 +55,10 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     wallpaper: deepseekChan,
     previewPosition: '72% 48%',
     surface: 'deepseek-chan',
-    tokens: darkTokens('#0b1425', '#121e34', '#192844', '#4d9fff', '#e9f3ff', '#a9c2df'),
+    tokens: {
+      light: lightTokens('#eef5ff', '#f9fbff', '#e2ecfa', '#2f74d0', '#182a44', '#607897'),
+      dark: darkTokens('#0b1425', '#121e34', '#192844', '#4d9fff', '#e9f3ff', '#a9c2df'),
+    },
   },
   {
     id: `${ID_PREFIX}qq2008-crystal`,
@@ -65,12 +68,20 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     previewPosition: '50% 50%',
     variant: 'qq2008',
     surface: 'qq2008',
-    tokens: lightTokens('#edf8ff', '#f8fdff', '#dff3ff', '#2f85c7', '#164a73', '#527a98', {
-      '--dsw-alias-border-l1': '#b5d7ec',
-      '--dsw-alias-border-l2': '#82b7df',
-      '--dsw-alias-interactive-bg-hover': 'rgba(255, 157, 33, 0.16)',
-      '--dsw-specific-sidebar-fill': '#d9efff',
-    }),
+    tokens: {
+      light: lightTokens('#edf8ff', '#f8fdff', '#dff3ff', '#2f85c7', '#164a73', '#527a98', {
+        '--dsw-alias-border-l1': '#b5d7ec',
+        '--dsw-alias-border-l2': '#82b7df',
+        '--dsw-alias-interactive-bg-hover': 'rgba(255, 157, 33, 0.16)',
+        '--dsw-specific-sidebar-fill': '#d9efff',
+      }),
+      dark: darkTokens('#07172b', '#0d2945', '#133955', '#5db8f3', '#eef9ff', '#a4cbe2', {
+        '--dsw-alias-border-l1': '#244c70',
+        '--dsw-alias-border-l2': '#3a709d',
+        '--dsw-alias-interactive-bg-hover': 'rgba(93, 184, 243, 0.16)',
+        '--dsw-specific-sidebar-fill': '#0b2944',
+      }),
+    },
   },
   {
     id: `${ID_PREFIX}cloud-lab`,
@@ -79,7 +90,10 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     wallpaper: cloudLab,
     previewPosition: '72% 46%',
     surface: 'cloud-lab',
-    tokens: lightTokens('#f3f7ff', '#fbfdff', '#e8f2fb', '#5e7ce2', '#1f3152', '#60728e'),
+    tokens: {
+      light: lightTokens('#f3f7ff', '#fbfdff', '#e8f2fb', '#5e7ce2', '#1f3152', '#60728e'),
+      dark: darkTokens('#0a1b2a', '#112b3f', '#18384e', '#7eb8ff', '#eef8ff', '#abc4d8'),
+    },
   },
   {
     id: `${ID_PREFIX}ink-algorithm`,
@@ -88,7 +102,10 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     wallpaper: inkAlgorithm,
     previewPosition: '78% 50%',
     surface: 'ink-algorithm',
-    tokens: lightTokens('#f2f0ea', '#fbfaf6', '#e7e4dc', '#b13a34', '#1c292f', '#617077'),
+    tokens: {
+      light: lightTokens('#f2f0ea', '#fbfaf6', '#e7e4dc', '#b13a34', '#1c292f', '#617077'),
+      dark: darkTokens('#171817', '#222321', '#2c2c29', '#df7770', '#f5f0e8', '#b9b1a6'),
+    },
   },
   {
     id: `${ID_PREFIX}abyss-starport`,
@@ -97,7 +114,10 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     wallpaper: abyssStarport,
     previewPosition: '77% 50%',
     surface: 'abyss-starport',
-    tokens: darkTokens('#071b24', '#0c2732', '#123542', '#28d7d0', '#e7fbff', '#9bc9d2'),
+    tokens: {
+      light: lightTokens('#edfafd', '#f8fdff', '#daf1f3', '#168b91', '#173a41', '#567a80'),
+      dark: darkTokens('#071b24', '#0c2732', '#123542', '#28d7d0', '#e7fbff', '#9bc9d2'),
+    },
   },
   {
     id: `${ID_PREFIX}deepsea-whale`,
@@ -106,7 +126,10 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     wallpaper: deepseaWhale,
     previewPosition: '58% 48%',
     surface: 'deepsea-whale',
-    tokens: darkTokens('#082039', '#0d2c4c', '#12385e', '#55bdf2', '#eff8ff', '#accce2'),
+    tokens: {
+      light: lightTokens('#edf7ff', '#f8fcff', '#dceefa', '#2f87bd', '#153d5d', '#597c98'),
+      dark: darkTokens('#082039', '#0d2c4c', '#12385e', '#55bdf2', '#eff8ff', '#accce2'),
+    },
   },
   {
     id: `${ID_PREFIX}intelligence-orbit-ink`,
@@ -115,7 +138,10 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     wallpaper: intelligenceOrbitInk,
     previewPosition: '64% 46%',
     surface: 'intelligence-orbit-ink',
-    tokens: lightTokens('#f4f1eb', '#fcfaf6', '#e9e5dd', '#b98735', '#2d3138', '#686b70'),
+    tokens: {
+      light: lightTokens('#f4f1eb', '#fcfaf6', '#e9e5dd', '#b98735', '#2d3138', '#686b70'),
+      dark: darkTokens('#1b1b1d', '#29282a', '#343235', '#d6a85b', '#f5f1e9', '#bbb3a8'),
+    },
   },
   {
     id: `${ID_PREFIX}intelligence-orbit-dawn`,
@@ -124,7 +150,10 @@ export const SKIN_PRESETS: readonly SkinPreset[] = [
     wallpaper: intelligenceOrbitDawn,
     previewPosition: '62% 46%',
     surface: 'intelligence-orbit-dawn',
-    tokens: lightTokens('#f4f7fb', '#fcfdff', '#e8f0f8', '#4e82c8', '#24364b', '#60758c'),
+    tokens: {
+      light: lightTokens('#f4f7fb', '#fcfdff', '#e8f0f8', '#4e82c8', '#24364b', '#60758c'),
+      dark: darkTokens('#101d2d', '#192b40', '#223951', '#79aef0', '#f2f7ff', '#b0c3db'),
+    },
   },
 ] as const
 
@@ -140,6 +169,7 @@ function darkTokens(
   accent: string,
   text: string,
   secondaryText: string,
+  extra: Record<string, string> = {},
 ): Record<string, string> {
   return {
     '--dsw-alias-bg-base': base,
@@ -150,6 +180,7 @@ function darkTokens(
     '--dsw-alias-brand-primary': accent,
     '--dsw-alias-label-primary': text,
     '--dsw-alias-label-secondary': secondaryText,
+    ...extra,
   }
 }
 

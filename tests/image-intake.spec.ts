@@ -16,6 +16,8 @@ describe('wallpaper palette extraction', () => {
     expect(palette.secondary).toBe('#285adc')
     expect(palette.surface).toMatch(/^#[0-9a-f]{6}$/)
     expect(palette.text).toMatch(/^#[0-9a-f]{6}$/)
+    expect(palette.modes?.light.surface).not.toBe(palette.modes?.dark.surface)
+    expect(palette.modes?.light.text).not.toBe(palette.modes?.dark.text)
   })
 
   it('falls back to the product accent for a bright neutral image', () => {
@@ -24,5 +26,6 @@ describe('wallpaper palette extraction', () => {
     ))
     expect(palette.colorScheme).toBe('light')
     expect(palette.accent).toBe('#24c9d7')
+    expect(palette.modes?.dark.surface).toMatch(/^#[0-9a-f]{6}$/)
   })
 })

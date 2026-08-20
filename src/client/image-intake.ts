@@ -6,7 +6,7 @@
  * The caller shows a processing state while browser decode/canvas compression
  * runs, and the wallpaper appears only once the result is ready.
  */
-import type { WallpaperPalette } from '../appearance-settings.ts'
+import type { WallpaperPalette, WallpaperPaletteVariant } from '../appearance-settings.ts'
 
 /** Target bounds for the compressed wallpaper, in pixels and JPEG quality. */
 const MAX_SIDE = 1600
@@ -145,13 +145,24 @@ export function extractPalette(pixels: Uint8ClampedArray): WallpaperPalette {
   const accentHue = ranked[0]?.hue ?? 0
   const secondary = ranked.find(candidate => hueGap(candidate.hue, accentHue) > 50)?.rgb
     ?? mix(accent, [255, 255, 255], 0.35)
-  const light = averageLuminance > 128
-  return {
-    colorScheme: light ? 'light' : 'dark',
+  const lightMode: WallpaperPaletteVariant = {
     accent: hex(accent),
     secondary: hex(secondary),
-    surface: hex(light ? mix(accent, [252, 252, 255], 0.92) : mix(accent, [12, 12, 18], 0.86)),
-    text: hex(light ? mix(accent, [16, 24, 40], 0.82) : mix(accent, [244, 246, 252], 0.85)),
+    surface: hex(mix(accent, [252, 252, 255], 0.92)),
+    text: hex(mix(accent, [16, 24, 40], 0.82)),
+  }
+  const darkMode: WallpaperPaletteVariant = {
+    accent: hex(accent),
+    secondary: hex(secondary),
+    surface: hex(mix(accent, [12, 12, 18], 0.86)),
+    text: hex(mix(accent, [244, 246, 252], 0.85)),
+  }
+  const colorScheme = averageLuminance > 128 ? 'light' : 'dark'
+  const preferred = colorScheme === 'light' ? lightMode : darkMode
+  return {
+    colorScheme,
+    ...preferred,
+    modes: { light: lightMode, dark: darkMode },
   }
 }
 

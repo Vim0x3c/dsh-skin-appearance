@@ -172,15 +172,15 @@ export function AppearanceSection({ t, useStore, ...face }: AppearanceSectionCom
               </span>
               <span className={css.cardFooter}>
                 <span>{t('skin.wallpaper')}</span>
-                <span className={css.scheme}>{t(`scheme.${settings.palette.colorScheme}`)}</span>
+                <span className={css.scheme}>{t('scheme.adaptive')}</span>
               </span>
             </button>
           )}
           {SKIN_PRESETS.map(preset => {
             const style = {
-              '--skin-bg': preset.tokens['--dsw-alias-bg-base'],
-              '--skin-surface': preset.tokens['--dsw-alias-bg-layer-2'],
-              '--skin-accent': preset.tokens['--dsw-alias-brand-primary'],
+              '--skin-bg': preset.tokens[preset.colorScheme]['--dsw-alias-bg-base'],
+              '--skin-surface': preset.tokens[preset.colorScheme]['--dsw-alias-bg-layer-2'],
+              '--skin-accent': preset.tokens[preset.colorScheme]['--dsw-alias-brand-primary'],
             } as CSSProperties
             const previewStyle = {
               backgroundImage: `url("${preset.wallpaper}")`,
@@ -205,9 +205,7 @@ export function AppearanceSection({ t, useStore, ...face }: AppearanceSectionCom
               </span>
               <span className={css.cardFooter}>
                 <span>{t(`skin.${preset.key}` as AppearanceKey)}</span>
-                <span className={css.scheme}>
-                  {t(`scheme.${preset.colorScheme}` as AppearanceKey)}
-                </span>
+                <span className={css.scheme}>{t('scheme.adaptive')}</span>
               </span>
             </button>
             )

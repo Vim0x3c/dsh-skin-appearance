@@ -16,7 +16,7 @@ import {
   buildQq2008Shading, buildWallpaperPaletteShading, buildWallpaperShading,
 } from './shading.ts'
 import { en, zh, type AppearanceKey } from './locales.ts'
-import { resolveSkinPreset, SKIN_PRESETS, type SkinPreset } from './skin-presets.ts'
+import { resolveSkinPreset, type SkinPreset } from './skin-presets.ts'
 import {
   APPEARANCE_FIELDS, APPEARANCE_SETTINGS_NAMESPACE, DEFAULT_BLUR, DEFAULT_OPACITY,
   DEFAULT_SKIN_ID, WALLPAPER_SKIN_ID, type AppearanceSettings, type WallpaperPalette,
@@ -47,31 +47,27 @@ export function apply(ctx: ClientContext): void {
   const scope = ctx.settingsScope.bind<AppearanceSettings>({ namespace: APPEARANCE_SETTINGS_NAMESPACE })
   ctx.effect(() => ctx.locale.register(SETTINGS_NS, { zh, en }), 'dsh-skin-appearance: dictionaries')
 
-  for (const preset of SKIN_PRESETS) {
-    ctx.effect(
-      () => ctx.theme.register({
-        id: preset.id,
-        colorScheme: preset.colorScheme,
-        tokens: preset.tokens,
-      }),
-      `dsh-skin-appearance: theme ${preset.id}`,
-    )
+  let applier: WallpaperApplier | undefined
+  let surface: SurfaceStyleApplier | undefined
+  const getApplier = (): WallpaperApplier => {
+    applier ??= new WallpaperApplier()
+    return applier
   }
-
-  const applier = new WallpaperApplier()
-  const surface = new SurfaceStyleApplier()
+  const getSurface = (): SurfaceStyleApplier => {
+    surface ??= new SurfaceStyleApplier()
+    return surface
+  }
   let overrideDispose: (() => void) | undefined
   const clearOverride = (): void => {
     overrideDispose?.()
     overrideDispose = undefined
   }
-
-  const applySkinPreference = (settings: AppearanceSettings): void => {
-    const preset = resolveSkinPreset(settings.skin)
-    const desired = settings.skin === WALLPAPER_SKIN_ID && settings.palette !== null
-      ? settings.palette.colorScheme
-      : preset?.id ?? 'system'
-    if (ctx.theme.getTheme().preference !== desired) ctx.theme.setTheme(desired)
+  const deactivateAppearance = (): void => {
+    applier?.dispose()
+    applier = undefined
+    surface?.dispose()
+    surface = undefined
+    clearOverride()
   }
 
   const shade = (settings: AppearanceSettings, opacity = settings.opacity): void => {
@@ -86,36 +82,44 @@ export function apply(ctx: ClientContext): void {
     }
     const preset = resolveSkinPreset(settings.skin)
     if (preset?.variant === 'qq2008') {
-      overrideDispose = ctx.theme.overrideTokens('dsh-skin-appearance', buildQq2008Shading(opacity))
+      overrideDispose = ctx.theme.overrideTokens('dsh-skin-appearance', {
+        ...presetTokenOverrides(preset),
+        ...buildQq2008Shading(opacity),
+      })
       return
     }
     const snapshot = ctx.theme.getTheme()
     const base = preset === undefined ? resolvedBase(snapshot) : presetBase(preset)
     overrideDispose = ctx.theme.overrideTokens(
       'dsh-skin-appearance',
-      buildWallpaperShading({ base }, opacity),
+      preset === undefined
+        ? buildWallpaperShading({ base }, opacity)
+        : {
+            ...presetTokenOverrides(preset),
+            ...buildWallpaperShading({ base }, opacity),
+          },
     )
   }
 
   const applyWallpaper = (settings: AppearanceSettings): void => {
     const wallpaper = wallpaperFor(settings)
     if (wallpaper === '') {
-      applier.setImage('')
-      surface.setMode('none')
-      clearOverride()
+      deactivateAppearance()
       return
     }
-    applier.setOpacity(settings.opacity)
-    applier.setBlur(settings.blur)
-    applier.setImage(wallpaper)
+    const wallpaperApplier = getApplier()
+    const surfaceApplier = getSurface()
+    wallpaperApplier.setOpacity(settings.opacity)
+    wallpaperApplier.setBlur(settings.blur)
+    wallpaperApplier.setImage(wallpaper)
     shade(settings)
-    surface.setMode(surfaceMode(settings, ctx.theme.getTheme()))
+    const snapshot = ctx.theme.getTheme()
+    surfaceApplier.setMode(surfaceMode(settings, snapshot), snapshot.active.colorScheme)
   }
 
   const adopt = (): void => {
     const settings = scope.getSnapshot().value
     if (settings === undefined) return
-    applySkinPreference(settings)
     applyWallpaper(settings)
   }
   ctx.effect(
@@ -132,14 +136,16 @@ export function apply(ctx: ClientContext): void {
     lastThemeIdentity = nextIdentity
     const settings = scope.getSnapshot().value
     if (settings !== undefined) {
+      if (wallpaperFor(settings) === '') {
+        deactivateAppearance()
+        return
+      }
       shade(settings)
-      surface.setMode(surfaceMode(settings, snapshot))
+      getSurface().setMode(surfaceMode(settings, snapshot), snapshot.active.colorScheme)
     }
   })
   ctx.effect(() => () => {
-    applier.dispose()
-    surface.dispose()
-    clearOverride()
+    deactivateAppearance()
   }, 'dsh-skin-appearance: wallpaper cleanup')
   adopt()
 
@@ -155,12 +161,12 @@ export function apply(ctx: ClientContext): void {
     const previewOpacity = (value: number): void => {
       const current = scope.getSnapshot().value
       if (current === undefined || wallpaperFor(current) === '') return
-      applier.setOpacity(value)
+      applier?.setOpacity(value)
       shade(current, value)
     }
     const previewBlur = (value: number): void => {
       const current = scope.getSnapshot().value
-      if (current !== undefined && wallpaperFor(current) !== '') applier.setBlur(value)
+      if (current !== undefined && wallpaperFor(current) !== '') applier?.setBlur(value)
     }
 
     return {
@@ -170,7 +176,6 @@ export function apply(ctx: ClientContext): void {
         const current = scope.getSnapshot().value
         if (current === undefined) return
         const next = { ...current, skin: id }
-        applySkinPreference(next)
         applyWallpaper(next)
         void scope.set(APPEARANCE_FIELDS.skin, id)
       },
@@ -182,14 +187,12 @@ export function apply(ctx: ClientContext): void {
           void scope.set(APPEARANCE_FIELDS.palette, null)
           if (current.skin === WALLPAPER_SKIN_ID) {
             const next = { ...current, skin: DEFAULT_SKIN_ID, wallpaper: '', palette: null }
-            applySkinPreference(next)
             applyWallpaper(next)
             void scope.set(APPEARANCE_FIELDS.skin, DEFAULT_SKIN_ID)
           }
           return
         }
         const next = customWallpaperSettings(current, dataUrl, palette ?? null)
-        applySkinPreference(next)
         applyWallpaper(next)
         void scope.set(APPEARANCE_FIELDS.palette, palette ?? null)
         void scope.set(APPEARANCE_FIELDS.skin, WALLPAPER_SKIN_ID)
@@ -211,10 +214,7 @@ export function apply(ctx: ClientContext): void {
           opacity: DEFAULT_OPACITY,
           blur: DEFAULT_BLUR,
         }
-        if (current !== undefined) applySkinPreference(next)
-        applier.setImage('')
-        surface.setMode('none')
-        clearOverride()
+        deactivateAppearance()
         void scope.set(APPEARANCE_FIELDS.skin, DEFAULT_SKIN_ID)
         void scope.set(APPEARANCE_FIELDS.wallpaper, '')
         void scope.set(APPEARANCE_FIELDS.palette, null)
@@ -250,8 +250,20 @@ function customWallpaperSettings(
 }
 
 function presetBase(preset: SkinPreset): { light: string; dark: string } {
-  const base = preset.tokens['--dsw-alias-bg-base'] ?? (preset.colorScheme === 'dark' ? '#15171a' : '#f5f6f8')
-  return { light: base, dark: base }
+  return {
+    light: preset.tokens.light['--dsw-alias-bg-base'] ?? '#f5f6f8',
+    dark: preset.tokens.dark['--dsw-alias-bg-base'] ?? '#15171a',
+  }
+}
+
+function presetTokenOverrides(
+  preset: SkinPreset,
+): Record<string, { light: string; dark: string }> {
+  const names = new Set([...Object.keys(preset.tokens.light), ...Object.keys(preset.tokens.dark)])
+  return Object.fromEntries([...names].map(name => [name, {
+    light: preset.tokens.light[name] ?? preset.tokens.dark[name]!,
+    dark: preset.tokens.dark[name] ?? preset.tokens.light[name]!,
+  }]))
 }
 
 function resolvedBase(snapshot: ThemeSnapshot): { light: string; dark: string } {
@@ -266,8 +278,5 @@ function resolvedBase(snapshot: ThemeSnapshot): { light: string; dark: string } 
 function surfaceMode(settings: AppearanceSettings, snapshot: ThemeSnapshot): SurfaceStyleMode {
   const preset = resolveSkinPreset(settings.skin)
   if (preset !== undefined) return preset.surface
-  const colorScheme = settings.skin === WALLPAPER_SKIN_ID && settings.palette !== null
-    ? settings.palette.colorScheme
-    : snapshot.active.colorScheme
-  return colorScheme === 'dark' ? 'glass-dark' : 'glass-light'
+  return snapshot.active.colorScheme === 'dark' ? 'glass-dark' : 'glass-light'
 }

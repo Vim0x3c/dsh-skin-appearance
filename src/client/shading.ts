@@ -10,7 +10,7 @@
  * recipe contains only gradients and translucent colors; it is rebuilt when
  * the image opacity or active palette changes.
  */
-import type { WallpaperPalette } from '../appearance-settings.ts'
+import type { WallpaperPalette, WallpaperPaletteVariant } from '../appearance-settings.ts'
 
 /** One alias token override layer the wallpaper shading needs: value per palette mode. */
 export interface TokenModes {
@@ -102,16 +102,56 @@ export function buildWallpaperPaletteShading(
   palette: WallpaperPalette,
   wash: number,
 ): TokenOverrides {
-  const pair = (value: string): TokenModes => modes(value, value)
+  const paletteModes = resolvePaletteModes(palette)
   return {
-    ...buildWallpaperShading({ base: { light: palette.surface, dark: palette.surface } }, wash),
-    '--dsw-alias-brand-primary': pair(palette.accent),
-    '--dsw-alias-label-primary': pair(palette.text),
-    '--dsw-alias-label-secondary': pair(toRgba(palette.text, 0.72)),
-    '--dsw-alias-border-l1': pair(toRgba(palette.secondary, 0.24)),
-    '--dsw-alias-border-l2': pair(toRgba(palette.accent, 0.34)),
-    '--dsw-alias-interactive-bg-hover': pair(toRgba(palette.secondary, 0.14)),
+    ...buildWallpaperShading({
+      base: { light: paletteModes.light.surface, dark: paletteModes.dark.surface },
+    }, wash),
+    '--dsw-alias-brand-primary': modes(paletteModes.light.accent, paletteModes.dark.accent),
+    '--dsw-alias-label-primary': modes(paletteModes.light.text, paletteModes.dark.text),
+    '--dsw-alias-label-secondary': modes(
+      toRgba(paletteModes.light.text, 0.72),
+      toRgba(paletteModes.dark.text, 0.72),
+    ),
+    '--dsw-alias-border-l1': modes(
+      toRgba(paletteModes.light.secondary, 0.24),
+      toRgba(paletteModes.dark.secondary, 0.3),
+    ),
+    '--dsw-alias-border-l2': modes(
+      toRgba(paletteModes.light.accent, 0.34),
+      toRgba(paletteModes.dark.accent, 0.42),
+    ),
+    '--dsw-alias-interactive-bg-hover': modes(
+      toRgba(paletteModes.light.secondary, 0.14),
+      toRgba(paletteModes.dark.secondary, 0.18),
+    ),
   }
+}
+
+/** Resolve palettes written before dual-mode extraction into safe opposite-mode colors. */
+export function resolvePaletteModes(
+  palette: WallpaperPalette,
+): { light: WallpaperPaletteVariant; dark: WallpaperPaletteVariant } {
+  if (palette.modes !== undefined) return palette.modes
+  const original: WallpaperPaletteVariant = {
+    accent: palette.accent,
+    secondary: palette.secondary,
+    surface: palette.surface,
+    text: palette.text,
+  }
+  const light: WallpaperPaletteVariant = palette.colorScheme === 'light' ? original : {
+    accent: palette.accent,
+    secondary: palette.secondary,
+    surface: mixHex(palette.accent, '#fcfcff', 0.92),
+    text: mixHex(palette.accent, '#101828', 0.82),
+  }
+  const dark: WallpaperPaletteVariant = palette.colorScheme === 'dark' ? original : {
+    accent: palette.accent,
+    secondary: palette.secondary,
+    surface: mixHex(palette.accent, '#0c0c12', 0.86),
+    text: mixHex(palette.accent, '#f4f6fc', 0.85),
+  }
+  return { light, dark }
 }
 
 /**
@@ -123,15 +163,35 @@ export function buildQq2008Shading(wash: number): TokenOverrides {
   const normalizedWash = clampUnit(wash)
   const alpha = (minimum: number): number =>
     Math.round((1 - normalizedWash * (1 - minimum)) * 1000) / 1000
-  const base = `linear-gradient(180deg, rgba(255, 255, 255, ${alpha(0.58)}) 0%,`
+  const lightBase = `linear-gradient(180deg, rgba(255, 255, 255, ${alpha(0.58)}) 0%,`
     + ` rgba(185, 229, 252, ${alpha(0.34)}) 28%, rgba(237, 248, 255, ${alpha(0.3)}) 100%)`
-  const sidebar = `linear-gradient(180deg, rgba(255, 255, 255, ${alpha(0.72)}) 0%,`
+  const lightSidebar = `linear-gradient(180deg, rgba(255, 255, 255, ${alpha(0.72)}) 0%,`
     + ` rgba(207, 235, 251, ${alpha(0.5)}) 20%, rgba(185, 222, 245, ${alpha(0.62)}) 100%)`
+  const darkBase = `linear-gradient(180deg, rgba(8, 29, 53, ${alpha(0.72)}) 0%,`
+    + ` rgba(13, 55, 87, ${alpha(0.48)}) 32%, rgba(5, 23, 43, ${alpha(0.52)}) 100%)`
+  const darkSidebar = `linear-gradient(180deg, rgba(13, 49, 78, ${alpha(0.82)}) 0%,`
+    + ` rgba(8, 36, 62, ${alpha(0.68)}) 24%, rgba(5, 24, 45, ${alpha(0.78)}) 100%)`
   return {
-    ...buildWallpaperShading({ base: { light: '#edf8ff', dark: '#edf8ff' } }, normalizedWash),
-    '--dsw-alias-bg-base': modes(base, base),
-    '--dsw-specific-sidebar-fill': modes(sidebar, sidebar),
+    ...buildWallpaperShading({ base: { light: '#edf8ff', dark: '#07172b' } }, normalizedWash),
+    '--dsw-alias-bg-base': modes(lightBase, darkBase),
+    '--dsw-specific-sidebar-fill': modes(lightSidebar, darkSidebar),
   }
+}
+
+function mixHex(left: string, right: string, amount: number): string {
+  const leftRgb = parseHex(left)
+  const rightRgb = parseHex(right)
+  if (leftRgb === undefined || rightRgb === undefined) return left
+  const mixed = leftRgb.map((value, index) =>
+    Math.round(value + (rightRgb[index]! - value) * amount))
+  return `#${mixed.map(value => value.toString(16).padStart(2, '0')).join('')}`
+}
+
+function parseHex(color: string): [number, number, number] | undefined {
+  const hex = color.replace(/^#/, '')
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return undefined
+  const value = Number.parseInt(hex, 16)
+  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff]
 }
 
 /** Pair one token value for both palette modes. */

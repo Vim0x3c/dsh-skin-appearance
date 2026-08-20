@@ -13,19 +13,43 @@ import z from '@deepseek-ai/schemastery'
 import {
   APPEARANCE_FIELDS, APPEARANCE_SETTINGS_NAMESPACE, DEFAULT_BLUR, DEFAULT_OPACITY,
   DEFAULT_SKIN_ID, MAX_BLUR, MAX_OPACITY, MIN_BLUR, MIN_OPACITY,
-  type AppearanceSettings, type WallpaperPalette,
+  type AppearanceSettings, type WallpaperPalette, type WallpaperPaletteVariant,
 } from './appearance-settings.ts'
 
 const HexColorSchema = z.string().pattern(/^#[0-9a-f]{6}$/i)
 
-/** Persisted palette produced by the browser image pipeline. */
-export const WallpaperPaletteSchema: z<WallpaperPalette> = z.object({
+const WallpaperPaletteVariantSchema: z<WallpaperPaletteVariant> = z.object({
+  accent: HexColorSchema,
+  secondary: HexColorSchema,
+  surface: HexColorSchema,
+  text: HexColorSchema,
+})
+
+const LegacyWallpaperPaletteSchema = z.object({
   colorScheme: z.union(['light', 'dark'] as const),
   accent: HexColorSchema,
   secondary: HexColorSchema,
   surface: HexColorSchema,
   text: HexColorSchema,
 })
+
+const DualWallpaperPaletteSchema = z.object({
+  colorScheme: z.union(['light', 'dark'] as const),
+  accent: HexColorSchema,
+  secondary: HexColorSchema,
+  surface: HexColorSchema,
+  text: HexColorSchema,
+  modes: z.object({
+    light: WallpaperPaletteVariantSchema,
+    dark: WallpaperPaletteVariantSchema,
+  }),
+})
+
+/** Persisted palette produced by the browser image pipeline, including legacy values. */
+export const WallpaperPaletteSchema: z<WallpaperPalette> = z.union([
+  DualWallpaperPaletteSchema,
+  LegacyWallpaperPaletteSchema,
+]) as unknown as z<WallpaperPalette>
 
 /** Durable appearance schema; also the wire envelope the browser scope validates against. */
 export const AppearanceSettingsSchema: z<AppearanceSettings> = z.object({

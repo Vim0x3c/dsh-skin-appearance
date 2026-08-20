@@ -7,6 +7,11 @@ describe('skin presets', () => {
     expect(new Set(SKIN_PRESETS.map(preset => preset.colorScheme))).toEqual(new Set(['light', 'dark']))
     expect(SKIN_PRESETS.every(preset => preset.wallpaper.startsWith('data:image/webp;base64,'))).toBe(true)
     expect(new Set(SKIN_PRESETS.map(preset => preset.surface)).size).toBe(SKIN_PRESETS.length)
+    expect(SKIN_PRESETS.every(preset =>
+      preset.tokens.light['--dsw-alias-bg-base'] !== undefined
+      && preset.tokens.dark['--dsw-alias-bg-base'] !== undefined
+      && preset.tokens.light['--dsw-alias-label-primary'] !== preset.tokens.dark['--dsw-alias-label-primary'],
+    )).toBe(true)
   })
 
   it('keeps the QQ2008 preset on its dedicated glossy surface recipe', () => {

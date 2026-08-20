@@ -35,10 +35,8 @@ export const MIN_BLUR = 0
 export const MAX_BLUR = 60
 export const DEFAULT_BLUR = 0
 
-/** Palette derived from an uploaded wallpaper. */
-export interface WallpaperPalette {
-  /** Base appearance selected from the image's average luminance. */
-  colorScheme: 'light' | 'dark'
+/** One readable palette variant derived from an uploaded wallpaper. */
+export interface WallpaperPaletteVariant {
   /** Dominant saturated color used for primary accents. */
   accent: string
   /** A hue-separated companion color used for hover and border accents. */
@@ -47,6 +45,17 @@ export interface WallpaperPalette {
   surface: string
   /** Readable foreground color mixed against the surface. */
   text: string
+}
+
+/** Palette derived from an uploaded wallpaper. */
+export interface WallpaperPalette extends WallpaperPaletteVariant {
+  /** Base appearance selected from the image's average luminance. */
+  colorScheme: 'light' | 'dark'
+  /** Dual-mode colors; omitted only by configurations written before v0.2. */
+  modes?: {
+    light: WallpaperPaletteVariant
+    dark: WallpaperPaletteVariant
+  }
 }
 
 /**

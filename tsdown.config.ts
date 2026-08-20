@@ -106,7 +106,10 @@ function clientBundle(): UserConfig {
         const fileId = virtualId.slice(INLINE_ASSET_PREFIX.length)
         this.addWatchFile(fileId)
         const source = await readFile(fileId)
-        const mime = extname(fileId).toLowerCase() === '.webp' ? 'image/webp' : 'application/octet-stream'
+        const extension = extname(fileId).toLowerCase()
+        const mime = extension === '.webp' ? 'image/webp' : extension === '.jpg' || extension === '.jpeg'
+          ? 'image/jpeg'
+          : 'application/octet-stream'
         return `export default ${JSON.stringify(`data:${mime};base64,${source.toString('base64')}`)};`
       },
     }, {

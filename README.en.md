@@ -1,14 +1,15 @@
 # dsh-skin-appearance
 
-[中文](README.md) | English
+**Language: [中文](README.md) | English**
 
 An appearance plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness).
 
-It keeps the Harness UI native and adds an Appearance settings page with:
+It keeps the Harness controls native and adds an Appearance settings page with:
 
-- eight bundled image themes, each with its own matching sidebar, new-session button, search chrome, and composer surface;
+- eight bundled image themes;
 - a local wallpaper picker that downsizes images before storing them;
-- automatic palette extraction and matching light/dark appearance for uploaded wallpapers;
+- automatic palette extraction with distinct light and dark appearances for uploaded wallpapers;
+- theme-specific styling for the sidebar, new-session button, plugin entry, and composer;
 - independent wallpaper opacity and blur controls, defaulting to 100% opacity and 0 px blur;
 - Host-backed persistence across web restarts; and
 - one-click reset to the native Harness appearance.
@@ -44,9 +45,11 @@ dsh plugin --profile web add dsh-skin-appearance
 
 ## Design
 
-The Node half registers the `appearance` settings namespace using the Harness settings service. The browser half registers palette definitions through `ctx.theme`, contributes a `settings.section` slot, and owns a wallpaper layer covering the whole app root. Each bundled image theme also selects a dedicated surface recipe for the workspace sidebar, new-session action, section chrome, and composer. Custom wallpapers use an automatic light or dark glass recipe. The wallpaper layer itself never uses `backdrop-filter`; blur is limited to bounded interface surfaces so streaming and scrolling remain responsive.
+The Node half registers the `appearance` settings namespace using the Harness settings service. The browser half contributes a `settings.section` slot, applies dual-mode token overrides through `ctx.theme`, and owns a wallpaper layer covering the whole app root. All eight themes provide their own surface styling for the sidebar, session list, new-session action, plugin entry, and composer. QQ2008 adds a dedicated classic-blue window frame, while custom wallpapers use an adaptive light/dark glass recipe.
 
-Uploaded images are decoded and compressed to a JPEG data URL with a 1600 px long-side limit before they enter the settings document. A separate 48 px sample produces the dominant accent, a hue-separated secondary color, readable surface/text colors, and a matching light/dark mode. Preset palette tokens are managed by the Harness theme runtime, so switching back to `Default` delegates to the built-in system preference.
+Uploaded images are decoded and compressed to a JPEG data URL with a 1600 px long-side limit before they enter the settings document. A separate 48 px sample produces the dominant accent, a hue-separated secondary color, and readable surface/text colors for both light and dark modes. All presets and uploaded wallpapers follow the Harness `Light` / `Dark` / `System` preference without changing the selected skin. Switching back to `Default` removes every plugin-owned token and surface override.
+
+The wallpaper layer itself never uses `backdrop-filter`; blur is limited to bounded interface surfaces so streaming and scrolling remain responsive.
 
 ## Development
 

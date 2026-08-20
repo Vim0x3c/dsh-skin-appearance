@@ -46,16 +46,27 @@ describe('wallpaper shading', () => {
       secondary: '#285adc',
       surface: '#2a1013',
       text: '#f4e3e5',
+      modes: {
+        light: {
+          accent: '#c51a23', secondary: '#285adc', surface: '#fff3f4', text: '#351928',
+        },
+        dark: {
+          accent: '#dc1e28', secondary: '#4e78e5', surface: '#2a1013', text: '#f4e3e5',
+        },
+      },
     }, 0.5)
-    expect(result['--dsw-alias-brand-primary']).toEqual({ light: '#dc1e28', dark: '#dc1e28' })
-    expect(result['--dsw-alias-label-primary']).toEqual({ light: '#f4e3e5', dark: '#f4e3e5' })
-    expect(result['--dsw-alias-interactive-bg-hover']?.dark).toBe('rgba(40, 90, 220, 0.14)')
+    expect(result['--dsw-alias-brand-primary']).toEqual({ light: '#c51a23', dark: '#dc1e28' })
+    expect(result['--dsw-alias-label-primary']).toEqual({ light: '#351928', dark: '#f4e3e5' })
+    expect(result['--dsw-alias-interactive-bg-hover']?.dark).toBe('rgba(78, 120, 229, 0.18)')
   })
 
   it('builds a dedicated glossy blue QQ2008 surface without backdrop blur', () => {
     const result = buildQq2008Shading(1)
     expect(result['--dsw-alias-bg-base']?.light).toContain('linear-gradient')
     expect(result['--dsw-specific-sidebar-fill']?.light).toContain('rgba(207, 235, 251, 0.5)')
+    expect(result['--dsw-specific-sidebar-fill']?.dark).toContain('rgba(8, 36, 62, 0.68)')
+    expect(result['--dsw-specific-sidebar-fill']?.dark)
+      .not.toBe(result['--dsw-specific-sidebar-fill']?.light)
     expect(JSON.stringify(result)).not.toContain('backdrop-filter')
   })
 })
